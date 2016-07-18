@@ -16,10 +16,10 @@
 conf="/usr/local/etc/digitalocean.conf"
 
 if [ -f $conf ] ; then
-    . $conf
+	. $conf
 else
-    echo "$0: unable to load configuration file: $conf"
-    exit 1
+	echo "$0: unable to load configuration file: $conf"
+	exit 1
 fi
 
 #
@@ -39,31 +39,31 @@ echo "hostname=\"$hostname\"" >> $hostname_conf
 echo "# digitalocean network configuration" > $network_conf
 
 for i in `$api_item/interfaces` ; do
-    case "$i" in
+	case "$i" in
 	"public"*)
-	    net_if=$pub_if
-	    ;;
+		net_if=$pub_if
+		;;
 	"private"*)
-	    net_if=$pvt_if
-	    ;;
+		net_if=$pvt_if
+		;;
 	*)
-	    net_if=""
-    esac
-    
-    if [ ! -z $net_if ] ; then
-	for n in 4 6 ; do
-	    ip=`$api_item/interfaces/${i}0/ipv${n}/address 2>/dev/null`
-	    if [ ! -z "$ip" ] ; then
-		if [ $n = "4" ] ; then
-		    mask=`$api_item/interfaces/${i}0/ipv4/netmask`
-		    echo "ifconfig_${net_if}=\"inet $ip netmask $mask\"" >> $network_conf
-		else
-		    cidr=`$api_item/interfaces/${i}0/ipv6/cidr`
-		    echo "ifconfig_${net_if}_ipv6=\"inet6 ${ip}/${cidr}\"" >> $network_conf
-		fi
-	    fi
-	done
-    fi
+		net_if=""
+	esac
+
+	if [ ! -z $net_if ] ; then
+		for n in 4 6 ; do
+			ip=`$api_item/interfaces/${i}0/ipv${n}/address 2>/dev/null`
+			if [ ! -z "$ip" ] ; then
+				if [ $n = "4" ] ; then
+					mask=`$api_item/interfaces/${i}0/ipv4/netmask`
+					echo "ifconfig_${net_if}=\"inet $ip netmask $mask\"" >> $network_conf
+				else
+					cidr=`$api_item/interfaces/${i}0/ipv6/cidr`
+					echo "ifconfig_${net_if}_ipv6=\"inet6 ${ip}/${cidr}\"" >> $network_conf
+				fi
+			fi
+		done
+	fi
 done
 
 #
@@ -71,17 +71,17 @@ done
 #
 
 for n in 4 6 ; do
-    fip_active=`$api_item/floating_ip/ipv${n}/active 2>/dev/null`
-    if [ "$fip_active" = "true" ] ; then
-	fip=`$api_item/floating_ip/ipv${n}/ip_address`
-	aip=`$api_item/interfaces/public/0/anchor_ipv${n}/address`
-	v=""
-	if [ $n = "6" ] ; then
-	    v=$n
+	fip_active=`$api_item/floating_ip/ipv${n}/active 2>/dev/null`
+	if [ "$fip_active" = "true" ] ; then
+		fip=`$api_item/floating_ip/ipv${n}/ip_address`
+		aip=`$api_item/interfaces/public/0/anchor_ipv${n}/address`
+		v=""
+		if [ $n = "6" ] ; then
+			v=$n
+		fi
+		echo "floating_ipv${n}=\"$fip\"" >> $network_conf
+		echo "ifconfig_${pub_if}_alias0=\"inet${v} ${aip}/16\"" >> $network_conf
 	fi
-	echo "floating_ipv${n}=\"$fip\"" >> $network_conf
-	echo "ifconfig_${pub_if}_alias0=\"inet${v} ${aip}/16\"" >> $network_conf
-    fi
 done
 
 #
@@ -90,40 +90,42 @@ done
 
 echo "# digitalocean routing configuration" > $routing_conf
 for n in 4 6; do
-    gateway=`$api_item/interfaces/public/0/ipv${n}/gateway 2>/dev/null`
-    if [ ! -z $gateway ] ; then
-	if [ $n = "4" ] ; then
-	    echo "defaultrouter=\"$gateway\"" >> $routing_conf
-	else
-	    echo "ipv6_defaultrouter=\"$gateway\"" >> $routing_conf
+	gateway=`$api_item/interfaces/public/0/ipv${n}/gateway 2>/dev/null`
+	if [ ! -z $gateway ] ; then
+		if [ $n = "4" ] ; then
+			echo "defaultrouter=\"$gateway\"" >> $routing_conf
+		else
+			echo "ipv6_defaultrouter=\"$gateway\"" >> $routing_conf
+		fi
 	fi
-    fi
 done
 
 #
 # Set nameservers
 #
 
-if [ $use_do_dns -ne 0 ] ; then
-    `$api_item/dns/nameservers` | /sbin/resolvconf -a $pub_if
+if [ "$use_do_dns" = "1" ] ; then
+	`$api_item/dns/nameservers` | /sbin/resolvconf -a $pub_if
 fi
 
 #
 # Merge public keys with droplet_user's authorized keys (if user exists)
 #
 
-eval du=~$droplet_user
-if [ -d "$du" ] ; then
-    ssh_dir="${du}/.ssh"
-    if [ ! -d "$ssh_dir" ] ; then
-	(mkdir -m 700 $ssh_dir && chown $droplet_user $ssh_dir) || exit 1
-    fi
-    me=`basename $0`
-    do_keys_tmp=`mktemp -t $me` || exit 1
-    $api_item/public-keys > $do_keys_tmp || (rm $do_keys_tmp && exit 1)
-    auth_keys="${ssh_dir}/.authorized_keys"
-    cat $auth_keys >> $do_keys_tmp 2>/dev/null
-    sort -u $do_keys_tmp > $auth_keys
-    rm $do_keys_tmp
-    chown $droplet_user $auth_keys && chmod 600 $auth_keys
+if [ ! -z $droplet_user ] ; then
+	eval du=~$droplet_user
+	if [ -d "$du" ] ; then
+		ssh_dir="${du}/.ssh"
+		if [ ! -d "$ssh_dir" ] ; then
+			(mkdir -m 700 $ssh_dir && chown $droplet_user $ssh_dir) || exit 1
+		fi
+		me=`basename $0`
+		do_keys_tmp=`mktemp -t $me` || exit 1
+		$api_item/public-keys > $do_keys_tmp || (rm $do_keys_tmp && exit 1)
+		auth_keys="${ssh_dir}/.authorized_keys"
+		cat $auth_keys >> $do_keys_tmp 2>/dev/null
+		sort -u $do_keys_tmp > $auth_keys
+		rm $do_keys_tmp
+		chown $droplet_user $auth_keys && chmod 600 $auth_keys
+	fi
 fi
