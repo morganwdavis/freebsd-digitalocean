@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# PROVIDE: digitalocean
+# REQUIRE: var
+# BEFORE: netif hostname
+
+. /etc/rc.subr
+
+name="digitalocean"
+start_cmd="${name}_start"
+stop_cmd=":"
+
+digitalocean_start()
+{
+    . "/usr/local/etc/${name}.conf"
+    
+    has_inet=`/sbin/ifconfig $netif | /usr/bin/grep inet`
+
+    if [ -z "$has_inet" ] ; then
+	/sbin/ifconfig $pub_if inet $api_net
+    fi
+
+    check_startmsgs && echo "Starting DigitalOcean auto-configuration."
+    . "/usr/local/sbin/${name}.sh"
+
+    if [ -z "$has_inet" ] ; then
+	/sbin/ifconfig $pub_if inet $api_net delete
+    fi
+}
+
+load_rc_config $name
+run_rc_command "$1"
