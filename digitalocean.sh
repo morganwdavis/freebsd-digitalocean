@@ -4,7 +4,7 @@
 #
 # Creates system configuration files based on droplet metadata.
 #
-# Author: Morgan Davis (https://github/morganwdavis)
+# Author: Morgan Davis (https://github.com/morganwdavis)
 # Version: 1.0
 # Current version and docs: https://github.com/morganwdavis/freebsd-digitalocean
 #
