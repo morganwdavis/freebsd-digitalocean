@@ -4,47 +4,63 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 ## Features
 - Allows you to run a FreeBSD droplet that auto-configures itself at boot time.
 - No dependency on extra packages or ports -- it's just a simple shell script.
-- Replaces all your /etc/rc.conf networking configurations with just one `digitalocean="YES"` setting.
-- Supports IPv4 and IPv6 public and private network addressing and routing.
-- Supports Floating IPs by automatically adding the corresponding private anchor IPs for you.
-- Automatically sets the hostname.
-- Automatically sets the *freeebsd* user's authorized public keys.
-- Automatically adds the droplet's DNS nameservers.
+- Automatically sets up:
+	* IPv4 and IPv6 public and private network addressing and routing
+	* Floating IP anchor addresses
+	* Hostname and DNS servers
+	* *freebsd* user's authorized public keys
+- Replaces /etc/rc.conf networking configurations with just one `digitalocean="YES"` setting.
 - Completely configurable.
 
-## Installation
-As root:
-- Copy digitalocean to /usr/local/etc/rc.d (chmod 700)
-- Copy digitalocean.conf to /usr/local/etc (chmod 644)
-- Copy digitalocean.sh to /usr/local/sbin (chmod 700)
-- Add `digitalocean="YES"` to /etc/rc.conf
-- Edit /usr/local/etc/digitalocean.conf if needed (self-documenting)
+## Preparation
+>*WARNING: Any custom networking scripts you may have created in /etc/rc.conf.d will be replaced. Backup if needed.*
 
-## Testing
-- After installation, test it by entering `service digitalocean start`
-- This builds configuration files but does not change any active network settings
-- If no errors, check the `hostname`, `network`, and `routing` files in /etc/rc.conf.d
-- If you configured a `droplet_user` (typically *freebsd*), check its home directory for .ssh/authorized_keys
-- If all looks good, you can restart the droplet
+> NB: You can skip this preparation if you start with a completely vanilla FreeBSD installation, as described in **Why I made this** below.
 
-## Activation
-- Restart the droplet to rebuild the configuration files from the droplet's current metadata.
-- FreeBSD then continues with its normal network initialization.
+Droplets built from DigitalOcean's base FreeBSD images have extra packages and scripts that will no longer be required for auto configuration. They should be disabled first to avoid conflicts. When you're confident your cleaned-up droplet is working properly with this solution, you can remove the preinstalled stuff you do not need:
+- avahi
+- bsd-cloudinit
+- python
+- curl
+- Related settings in /etc/rc.conf and files in /usr/local/etc
+
+Extraneous files and directories:
+- /root/.cache directory
+- selfcheck.json file
+	*(can't remember where this is found)*
+- /etc/rc.digitalocean.d directory
+
+If you have your own ssh-enabled account, the *freebsd* user account can be removed.
+
+## Installation and testing
+1. As root, install these files manually or run the install.sh script:
+
+	```
+	install -m 700 digitalocean /usr/local/etc/rc.d
+	install -m 644 digitalocean.conf /usr/local/etc
+	install -m 700 digitalocean.sh /usr/local/sbin
+	```
+2. Add `digitalocean="YES"` to /etc/rc.conf
+3. If needed, edit /usr/local/etc/digitalocean.conf (self-documenting)
+4. Test it by entering `service digitalocean start`  
+	(Note: this builds configuration files but *does not change any active network settings*)
+5. Sanity-check the `hostname`, `network`, and `routing` files in /etc/rc.conf.d
+6. Optional: If you configured the `droplet_user` (typically *freebsd*), check its home directory for .ssh/authorized_keys
+7. If all looks good, you can restart the droplet
 
 ## Zero downtime network updates
 
-It is possible to reconfigure the FreeBSD instance while running. Then restart networking and routing without needing to reboot:
+It is possible to reconfigure the FreeBSD instance while running without needing to reboot. To restart networking and routing, enter these commands:
 
 ```
-# /usr/local/sbin/digitalocean.sh
-# /etc/rc.d/netif restart && /etc/rd.d/routing restart
+/usr/local/sbin/digitalocean.sh
+
+/etc/rc.d/netif restart && /etc/rd.d/routing restart
 ```
 
 ## Why I made this
-As of the time of this writing, DigitalOcean's FreeBSD base images did not support ZFS. In order to get that feature, you had to roll your own FreeBSD installation following these handy steps (see https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md).
+DigitalOcean's FreeBSD base images do not support ZFS. To get it, you have to [roll your own FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) which is not difficult.
 
-In addition to gaining ZFS, you also get a completely stock, pristine FreeBSD system with nothing weird added to it. No extra packages, no extra users, and no mysterious files or directories added by the fine folks at DigitalOcean. Awesome as they are, we really don't want anyone adding junk to our droplets.
+The upside, in addition to gaining ZFS, is having completely stock, pristine FreeBSD system with nothing weird added to it. No extra packages, no extra users, and no mysterious files or directories added by the fine folks at DigitalOcean. Awesome as they are, we really don't want anyone adding junk to our droplets.
 
-Of course, this also means the droplet requires the old-school network configurations in /etc/rc.conf, just like we had to do back in the day when our beards weren't so gray. But the downside of that means every new droplet you create from snapshot images boots up with hard-coded, conflicting network settings, and that's bad.
-
-To get a droplet to determine its own configuration from the DigitalOcean assigned metadata, we call upon their API to grab all the key settings. That's what this script does at boot time, which also means it gets the latest metadata. Now you can shutdown a droplet, change its settings, and power it on for proper operation without needing to edit or change anything inside the FreeBSD instance. And that's good.
+Using this script, a vanilla FreeBSD droplet can determine its configuration from the DigitalOcean API at boot time. That means it gets the latest metadata each time it restarts without needing to edit or change anything inside the FreeBSD instance.
