@@ -61,6 +61,6 @@ It is possible to reconfigure the FreeBSD instance while running without needing
 ## Why I made this
 DigitalOcean's FreeBSD base images do not support ZFS. To get it, you have to [roll your own FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) which is not difficult.
 
-The upside, in addition to gaining ZFS, is having completely stock, pristine FreeBSD system with nothing weird added to it. No extra packages, no extra users, and no mysterious files or directories added by the fine folks at DigitalOcean. Awesome as they are, we really don't want anyone adding junk to our droplets.
+The upside, in addition to gaining ZFS, is having a completely stock, pristine FreeBSD system with nothing weird added to it. No extra packages, no extra users, and no mysterious files or directories added by the fine folks at DigitalOcean. Awesome as they are, we really don't want anyone adding junk to our droplets.
 
-Using this script, a vanilla FreeBSD droplet can determine its configuration from the DigitalOcean API at boot time. That means it gets the latest metadata each time it restarts without needing to edit or change anything inside the FreeBSD instance.
+Using this script, a vanilla FreeBSD droplet can determine its configuration from the DigitalOcean API at boot time. That means it gets the latest metadata without needing to reconfigure anything inside the FreeBSD instance.
