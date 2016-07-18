@@ -9,7 +9,7 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 - Supports Floating IPs by automatically adding the corresponding private anchor IPs for you.
 - Automatically sets the hostname.
 - Automatically sets the *freeebsd* user's authorized public keys.
-- Automatically adds the droplets DNS nameservers.
+- Automatically adds the droplet's DNS nameservers.
 - Completely configurable.
 
 ## Installation
@@ -28,9 +28,17 @@ As root:
 - If all looks good, you can restart the droplet
 
 ## Activation
-- Restart the droplet
-- This digitalocean service rebuilds the configuration files from the droplet's current metadata.
+- Restart the droplet to rebuild the configuration files from the droplet's current metadata.
 - FreeBSD then continues with its normal network initialization.
+
+## Zero downtime network updates
+
+It is possible to reconfigure the FreeBSD instance while running. Then restart networking and routing without needing to reboot:
+
+```
+# /usr/local/sbin/digitalocean.sh
+# /etc/rc.d/netif restart && /etc/rd.d/routing restart
+```
 
 ## Why I made this
 As of the time of this writing, DigitalOcean's FreeBSD base images did not support ZFS. In order to get that feature, you had to roll your own FreeBSD installation following these handy steps (see https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md).
@@ -39,4 +47,4 @@ In addition to gaining ZFS, you also get a completely stock, pristine FreeBSD sy
 
 Of course, this also means the droplet requires the old-school network configurations in /etc/rc.conf, just like we had to do back in the day when our beards weren't so gray. But the downside of that means every new droplet you create from snapshot images boots up with hard-coded, conflicting network settings, and that's bad.
 
-To get a droplet to determine its own configuration from the DigitalOcean assigned metadata, we call upon their API to grab all the key settings. That's what this script does at boot time, which also means it gets the latest metadata. Now you can shutdown a droplet, change its settings (such as moving a Floating IP to or from it), and power it on for proper operation without needing to edit or change anything inside the FreeBSD instance. And that's good.
+To get a droplet to determine its own configuration from the DigitalOcean assigned metadata, we call upon their API to grab all the key settings. That's what this script does at boot time, which also means it gets the latest metadata. Now you can shutdown a droplet, change its settings, and power it on for proper operation without needing to edit or change anything inside the FreeBSD instance. And that's good.
