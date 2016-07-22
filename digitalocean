@@ -4,9 +4,16 @@
 # REQUIRE: var
 # BEFORE: netif hostname
 
+#
+# Add the following line to /etc/rc.conf to enable digitalocean:
+#
+#digitalocean_enable="YES"
+
 . /etc/rc.subr
 
 name="digitalocean"
+rcvar="${name}_enable"
+
 start_cmd="${name}_start"
 stop_cmd=":"
 
@@ -28,5 +35,7 @@ digitalocean_start()
     fi
 }
 
-load_rc_config $name
+load_rc_config "$name"
+: ${digitalocean_enable:=NO}
+
 run_rc_command "$1"

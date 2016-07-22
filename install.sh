@@ -20,11 +20,11 @@ else
 	fi
 fi
 
-if [ -z "`grep 'digitalocean=' /etc/rc.conf`" ] ; then
+if [ -z "`grep 'digitalocean_enable=' /etc/rc.conf`" ] ; then
 	echo
 	echo "To enable, add this to /etc/rc.conf"
 	echo
-	echo '	digitalocean="YES"'
+	echo '	digitalocean_enable="YES"'
 fi
 
 echo

@@ -9,7 +9,7 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 	* Floating IP anchor addresses
 	* Hostname and DNS servers
 	* *freebsd* user's authorized public keys
-- Replaces /etc/rc.conf networking configurations with just one `digitalocean="YES"` setting.
+- Replaces networking configurations in /etc/rc.conf with just one `digitalocean_enable="YES"` setting.
 - Completely configurable.
 
 ## Preparation
@@ -40,7 +40,7 @@ If you have your own ssh-enabled account, the *freebsd* user account can be remo
 	install -m 644 digitalocean.conf /usr/local/etc
 	install -m 700 digitalocean.sh /usr/local/sbin
 	```
-2. Add `digitalocean="YES"` to /etc/rc.conf
+2. Add `digitalocean_enable="YES"` to /etc/rc.conf
 3. If needed, edit /usr/local/etc/digitalocean.conf (self-documenting)
 4. Test it by entering `service digitalocean start`  
 	(Note: this builds configuration files but *does not change any active network settings*)
@@ -53,14 +53,16 @@ If you have your own ssh-enabled account, the *freebsd* user account can be remo
 It is possible to reconfigure the FreeBSD instance while running without needing to reboot. To restart networking and routing, enter these commands:
 
 ```
-/usr/local/sbin/digitalocean.sh
+service digitalocean restart
 
 /etc/rc.d/netif restart && /etc/rd.d/routing restart
 ```
 
 ## Why I made this
-DigitalOcean's FreeBSD base images do not support ZFS. To get it, you have to [roll your own FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) which is not difficult.
+DigitalOcean's FreeBSD base images do not support ZFS. To get it, you have to [perform your own standard FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) which is not difficult, and usually preferrable. You end up with a ZFS-enabled FreeBSD system, installed just as you want it, with nothing weird added to it.
 
-The upside, in addition to gaining ZFS, is having a completely stock, pristine FreeBSD system with nothing weird added to it. No extra packages, no extra users, and no mysterious files or directories added by the fine folks at DigitalOcean. Awesome as they are, we really don't want anyone adding junk to our droplets.
+You could manually configure your new stock FreeBSD droplet by putting the required networking statements in /etc/rc.conf. But that removes the benefits of being able to deploy properly configured droplet clones that have correct, non-conflicting settings.
 
-Using this script, a vanilla FreeBSD droplet can determine its configuration from the DigitalOcean API at boot time. That means it gets the latest metadata without needing to reconfigure anything inside the FreeBSD instance.
+I didn't want to use the method DigitalOcean implements for auto-configuration. Extra packages of networking support tools and the special *freebsd* user account increase attack surfaces. Those packages will require updates at some point. They take up disk space, create persistent processes in memory, and steal CPU cycles.
+
+Even if I didn't need ZFS (e.g., on one of the smaller memory droplets), I'd still want to make the droplet as pristine as possible while keeping the auto-configuration benefits. This shell script-based solution does the trick.
