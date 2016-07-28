@@ -66,3 +66,12 @@ You could manually configure your new stock FreeBSD droplet by putting the requi
 I didn't want to use the method DigitalOcean implements for auto-configuration. Extra packages of networking support tools and the special *freebsd* user account increase attack surfaces. Those packages will require updates at some point. They take up disk space, create persistent processes in memory, and steal CPU cycles.
 
 Even if I didn't need ZFS (e.g., on one of the smaller memory droplets), I'd still want to make the droplet as pristine as possible while keeping the auto-configuration benefits. This shell script-based solution does the trick.
+
+
+## What's next?
+I'd love to get some feedback from others running and testing this just to make sure it's solid and has all features working well. After that, I could see making this an actual FreeBSD package. That is, of course, if DigitalOcean doesn't adopt something equivalent in their upcoming base images.
+
+What they really need to do is create a base image that, when first run, is only accessible via the console and wakes up in the bsdinstall interface (running from memory) so you can truly set up your droplet like any normal FreeBSD installation. You could still use this script.
+
+## Updates
+This project was mentioned on [episode 152 of the BSD Now show](https://youtu.be/vcQPHHGnTwo?t=1h7m) on July 28, 2016.
