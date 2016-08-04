@@ -15,8 +15,6 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 ## Preparation
 >*WARNING: Any custom networking scripts you may have created in /etc/rc.conf.d will be replaced. Backup if needed.*
 
-> NB: You can skip this preparation if you start with a completely vanilla FreeBSD installation, as described in **Why I made this** below.
-
 Droplets built from DigitalOcean's base FreeBSD images have extra packages and scripts that will no longer be required for auto configuration. They should be disabled first to avoid conflicts. When you're confident your cleaned-up droplet is working properly with this solution, you can remove the preinstalled stuff you do not need:
 - avahi
 - bsd-cloudinit
@@ -33,7 +31,7 @@ Extraneous files and directories:
 If you have your own ssh-enabled account, the *freebsd* user account can be removed.
 
 ## Installation and testing
-1. As root, install these files manually or run the install.sh script:
+1. As root, run install.sh which essentially does this for you:
 
 	```
 	install -m 700 digitalocean /usr/local/etc/rc.d
@@ -59,19 +57,11 @@ service digitalocean restart
 ```
 
 ## Why I made this
-DigitalOcean's FreeBSD base images do not support ZFS. To get it, you have to [perform your own standard FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) which is not difficult, and usually preferrable. You end up with a ZFS-enabled FreeBSD system, installed just as you want it, with nothing weird added to it.
-
-You could manually configure your new stock FreeBSD droplet by putting the required networking statements in /etc/rc.conf. But that removes the benefits of being able to deploy properly configured droplet clones that have correct, non-conflicting settings.
-
-I didn't want to use the method DigitalOcean implements for auto-configuration. Extra packages of networking support tools and the special *freebsd* user account increase attack surfaces. Those packages will require updates at some point. They take up disk space, create persistent processes in memory, and steal CPU cycles.
-
-Even if I didn't need ZFS (e.g., on one of the smaller memory droplets), I'd still want to make the droplet as pristine as possible while keeping the auto-configuration benefits. This shell script-based solution does the trick.
-
+I didn't want to use DigitalOcean's implementation for auto-configuration. Extra packages of networking support tools and the special *freebsd* user account increase attack surfaces. Those packages will require updates at some point. They take up disk space, create persistent processes in memory, and steal CPU cycles. This shell script-based solution does the trick.
 
 ## What's next?
 I'd love to get some feedback from others running and testing this just to make sure it's solid and has all features working well. After that, I could see making this an actual FreeBSD package. That is, of course, if DigitalOcean doesn't adopt something equivalent in their upcoming base images.
 
-What they really need to do is create a base image that, when first run, is only accessible via the console and wakes up in the bsdinstall interface (running from memory) so you can truly set up your droplet like any normal FreeBSD installation. You could still use this script.
-
 ## Updates
-This project was mentioned on [episode 152 of the BSD Now show](https://youtu.be/vcQPHHGnTwo?t=1h7m) on July 28, 2016.
+- July 28, 2016: This project was mentioned on [episode 152 of the BSD Now show](https://youtu.be/vcQPHHGnTwo?t=1h7m).
+- August 3, 2016: DigitalOcean now offers FreeBSD base images with ZFS support! Removed references for [performing your own standard memory-based FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) in order to run bsdinstall so you can enable ZFS on the root filesystem.
