@@ -23,6 +23,26 @@ else
 fi
 
 #
+# Update hosts file
+#
+
+update_hosts() {
+	if [ ! -z "$hosts_file" ] ; then
+		host_addr="$1"
+		host_name="$2"
+
+		if [ ! -e $hosts_file ] ; then
+			touch $hosts_file
+		fi
+
+		(grep -q $host_name $hosts_file && \
+			sed -r -i '' "/${host_name}/s/^[0-9a-f\.:]+/${host_addr}/" $hosts_file) || \
+			echo "$host_addr	$host_name" >> $hosts_file
+	fi
+}
+
+
+#
 # Set hostname
 #
 
@@ -42,9 +62,11 @@ for i in `$api_item/interfaces` ; do
 	case "$i" in
 	"public"*)
 		net_if=$pub_if
+		addr_name="DO_PUB_IPV"
 		;;
 	"private"*)
 		net_if=$pvt_if
+		addr_name="DO_PVT_IPV"
 		;;
 	*)
 		net_if=""
@@ -61,6 +83,7 @@ for i in `$api_item/interfaces` ; do
 					cidr=`$api_item/interfaces/${i}0/ipv6/cidr`
 					echo "ifconfig_${net_if}_ipv6=\"inet6 ${ip}/${cidr}\"" >> $network_conf
 				fi
+				update_hosts $ip ${addr_name}${n}
 			fi
 		done
 	fi
@@ -80,7 +103,9 @@ for n in 4 6 ; do
 			v=$n
 		fi
 		echo "floating_ipv${n}=\"$fip\"" >> $network_conf
+		update_hosts $fip DO_FLOATING_IPV${n}
 		echo "ifconfig_${pub_if}_alias0=\"inet${v} ${aip}/16\"" >> $network_conf
+		update_hosts $aip DO_ANCHOR_IPV${n}
 	fi
 done
 
@@ -97,6 +122,7 @@ for n in 4 6; do
 		else
 			echo "ipv6_defaultrouter=\"$gateway\"" >> $routing_conf
 		fi
+		update_hosts $gateway DO_GW_IPV${n}
 	fi
 done
 

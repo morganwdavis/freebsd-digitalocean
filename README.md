@@ -56,6 +56,28 @@ service digitalocean restart
 /etc/rc.d/netif restart && /etc/rd.d/routing restart
 ```
 
+## Dynamically updated hosts files
+Setting the config option `hosts_file` to point to a file (such as /etc/hosts) will cause special `DO_*` entries found in that file to be updated with their corresponding IP addresses.  Example:
+
+```
+0.0.0.0         public-ip		# DO_PUB_IPV4
+0.0.0.0         private-ip		# DO_PVT_IPV4
+0.0.0.0         anchor-ip		# DO_ANCHOR_IPV4
+0.0.0.0         floating-ip		# DO_FLOATING_IPV4
+0.0.0.0         gateway-ip		# DO_GW_IPV4
+```
+
+The script searches for a line with a `DO_*` entry, such as `DO_PUB_IPV4`, and replaces the first column address with the corresponding metadata address value. This creates an alias for services that listen on an address by referring to its symbolic `DO_` name. The `DO_*` symbols are required exactly as shown for matching purposes. Optionally, any other symbolic names may be included on the line, such as the `*-ip` examples above.  In the case of the /etc/hosts file, this would allow a service to bind to the address associated with `anchor-ip`, provided the service permits host names.
+
+Your own scripts can also lookup these metadata addresses easily by using getent(1):
+
+```
+anchor_ip=`getent hosts anchor-ip | cut -f1 -d' '`
+```
+
+(Use `_IPV6` suffixed symbols for IPv6 adddresses.)
+
+
 ## Why I made this
 I didn't want to use DigitalOcean's implementation for auto-configuration. Extra packages of networking support tools and the special *freebsd* user account increase attack surfaces. Those packages will require updates at some point. They take up disk space, create persistent processes in memory, and steal CPU cycles. This shell script-based solution does the trick.
 
@@ -63,5 +85,7 @@ I didn't want to use DigitalOcean's implementation for auto-configuration. Extra
 I'd love to get some feedback from others running and testing this just to make sure it's solid and has all features working well. After that, I could see making this an actual FreeBSD package. That is, of course, if DigitalOcean doesn't adopt something equivalent in their upcoming base images.
 
 ## Updates
-- July 28, 2016: This project was mentioned on [episode 152 of the BSD Now show](https://youtu.be/vcQPHHGnTwo?t=1h7m).
+- August 12, 2016: Added support for dynamically updated host file entries.
 - August 3, 2016: DigitalOcean now offers FreeBSD base images with ZFS support! Removed references for [performing your own standard memory-based FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) in order to run bsdinstall so you can enable ZFS on the root filesystem.
+- July 28, 2016: This project was mentioned on [episode 152 of the BSD Now show](https://youtu.be/vcQPHHGnTwo?t=1h7m).
+
