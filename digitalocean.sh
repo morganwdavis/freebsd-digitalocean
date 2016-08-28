@@ -131,7 +131,7 @@ done
 #
 
 if [ "$use_do_dns" = "1" ] ; then
-	`$api_item/dns/nameservers` | /sbin/resolvconf -a $pub_if
+	$api_item/dns/nameservers | sed 's/^/nameserver /' | /sbin/resolvconf -a $pub_if
 fi
 
 #
