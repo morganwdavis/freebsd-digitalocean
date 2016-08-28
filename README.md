@@ -31,7 +31,7 @@ Extraneous files and directories:
 If you have your own ssh-enabled account, the *freebsd* user account can be removed.
 
 ## Installation and testing
-1. As root, run install.sh which essentially does this for you:
+1. As root, run update.sh which essentially does this for you:
 
 	```
 	install -m 700 digitalocean /usr/local/etc/rc.d
@@ -53,7 +53,7 @@ It is possible to reconfigure the FreeBSD instance while running without needing
 ```
 service digitalocean restart
 
-/etc/rc.d/netif restart && /etc/rd.d/routing restart
+service netif restart && service routing restart
 ```
 
 ## Dynamically updated hosts files
