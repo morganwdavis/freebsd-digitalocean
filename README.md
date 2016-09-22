@@ -17,8 +17,7 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 
 Droplets built from DigitalOcean's base FreeBSD images have extra packages and scripts that will no longer be required for auto configuration. They should be disabled first to avoid conflicts. When you're confident your cleaned-up droplet is working properly with this solution, you can remove the preinstalled stuff you do not need:
 
-Unecessary packages:
-
+Unnecessary packages:
 - avahi
 - bsd-cloudinit
 - python
@@ -26,10 +25,10 @@ Unecessary packages:
 
 `pkg delete avahi bsd-cloudinit python27 curl`
 
-Left over users:
+Unnecessary users:
 - `rmuser -y avahi avahi-autoipd messagebus`
 
-Settings in /etc/rc.conf
+Settings in /etc/rc.conf:
 - Remove ifconfig_vtnet0="dhcp"
 
 Extraneous files and directories:
