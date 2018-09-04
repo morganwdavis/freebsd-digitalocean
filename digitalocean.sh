@@ -51,6 +51,7 @@ echo "# digitalocean hostname configuration" > $hostname_conf
 hostname=`$api_item/hostname`
 echo "Configuring DigitalOcean droplet for $hostname"
 echo "hostname=\"$hostname\"" >> $hostname_conf
+hostname $hostname
 
 #
 # Set networking
