@@ -23,6 +23,30 @@ else
 fi
 
 #
+# update hostid; needed for deploying from snapshots
+#
+
+hostid=$(kenv -q smbios.system.uuid)
+if [ -e /etc/hostid ]; then
+	echo "current hostID = $(cat /etc/hostid)"
+fi
+echo "new hostID = $hostid"
+echo "$hostid" > /etc/hostid
+
+#
+# resize the disk (enables droplet resizing)
+#
+
+/sbin/gpart recover vtbd0
+/sbin/gpart resize -i3 vtbd0
+
+if [ -e /dev/gpt/disk0 ]; then
+	/sbin/zpool online -e zroot gpt/disk0
+else
+	/sbin/growfs -y /dev/gpt/rootfs
+fi
+
+#
 # Update hosts file
 #
 
