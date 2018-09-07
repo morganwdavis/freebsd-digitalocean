@@ -156,3 +156,17 @@ if [ ! -z $droplet_user ] ; then
 		chown $droplet_user $auth_keys && chmod 600 $auth_keys
 	fi
 fi
+
+
+#
+# Run commands provided via 'user-data'
+#
+
+userdata="`$api_item/user-data`"
+
+if [ ! -z "$userdata" ] ; then
+	userscript=`mktemp -t userdata` || exit 1
+	echo "$userdata" > $userscript
+	cat $userscript | sh
+	rm $userscript
+fi
