@@ -10,6 +10,7 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 	* Hostname and DNS servers
 	* *freebsd* user's authorized public keys
 - Replaces networking configurations in /etc/rc.conf with just one `digitalocean_enable="YES"` setting.
+- Runs "user-data" as shell commands e.g. to install packages or run a chef/puppet/ansible/... worker
 - Completely configurable.
 
 ## Preparation
