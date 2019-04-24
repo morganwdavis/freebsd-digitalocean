@@ -10,6 +10,7 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 	* Hostname and DNS servers
 	* *freebsd* user's authorized public keys
 - Replaces networking configurations in /etc/rc.conf with just one `digitalocean_enable="YES"` setting.
+- Runs "user-data" as shell commands e.g. to install packages or run a chef/puppet/ansible/... worker
 - Completely configurable.
 
 ## Preparation
@@ -18,25 +19,40 @@ Lightweight, zero-dependency, self-configuration for FreeBSD droplets on Digital
 Droplets built from DigitalOcean's base FreeBSD images have extra packages and scripts that will no longer be required for auto configuration. They should be disabled first to avoid conflicts. When you're confident your cleaned-up droplet is working properly with this solution, you can remove the preinstalled stuff you do not need:
 
 Unnecessary packages:
-- avahi
-- bsd-cloudinit
-- python
 - curl
+- dmidecode
+- e2fsprogs
+- gettext-runtime
+- gpart (is in base, no clue why DO installs it from pkg)
+- indexinfo
+- jq
+- libffi
+- libiconf
+- libnghttp2
+- oniguruma
+- python27
+- lots of py27-* packages
+- readline
+- rsync
+- sudo (doas is much more elegant and safer)
 
-`pkg delete avahi bsd-cloudinit python27 curl`
 
 Unnecessary users:
-- `rmuser -y avahi avahi-autoipd messagebus`
+- freebsd
 
-Settings in /etc/rc.conf:
-- Remove ifconfig_vtnet0="dhcp"
+
+Settings in /etc/rc.conf that can/should be removed:
+- hostname
+- cloudinit_enable
+- digitaloceanpre
+- digitalocean
+- all ifconfig and route-related lines
+- basically everything from the comment `DigitalOcean Dynamic Configuration lines and the immediate line below it, are removed each boot.` until the end of the file
+
 
 Extraneous files and directories:
-- /root/.cache directory
-- /etc/rc.digitalocean.d directory
-- /etc/rc.d/digitalocean
-
-If you have your own ssh-enabled account, the *freebsd* user account can be removed.
+- /usr/local/etc/rc.d/cloud* (cloudconfig, cloudfinal, cloudinit, cloudinitlocal)
+- /usr/local/etc/rc.d/digitalocean (digitalocean, digitaloceanpre)
 
 ## Installation and testing
 1. As root, run update.sh which essentially does this for you:
@@ -53,6 +69,8 @@ If you have your own ssh-enabled account, the *freebsd* user account can be remo
 5. Sanity-check the `hostname`, `network`, and `routing` files in /etc/rc.conf.d
 6. Optional: If you configured the `droplet_user` (typically *freebsd*), check its home directory for .ssh/authorized_keys
 7. If all looks good, you can restart the droplet
+
+Hint: sshd is configured to allow root-login with ssh-keys; so no additional user is needed. However, it is highly recommended to add a normal user and disable ssh root login.
 
 ## Zero downtime network updates
 

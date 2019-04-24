@@ -23,6 +23,32 @@ else
 fi
 
 #
+# update hostid; needed for deploying from snapshots
+#
+
+hostid=$(kenv -q smbios.system.uuid)
+if [ -e /etc/hostid ]; then
+	echo "current hostID = $(cat /etc/hostid)"
+fi
+echo "new hostID = $hostid"
+echo "$hostid" > /etc/hostid
+
+#
+# resize the disk (enables droplet resizing)
+#
+
+if [ "$auto_resize" = "1" ]; then
+	/sbin/gpart recover vtbd0
+	/sbin/gpart resize -i3 vtbd0
+
+	if [ -e /dev/gpt/disk0 ]; then
+		/sbin/zpool online -e zroot gpt/disk0
+	else
+		/sbin/growfs -y /dev/gpt/rootfs
+	fi
+fi
+
+#
 # Update hosts file
 #
 
@@ -51,6 +77,7 @@ echo "# digitalocean hostname configuration" > $hostname_conf
 hostname=`$api_item/hostname`
 echo "Configuring DigitalOcean droplet for $hostname"
 echo "hostname=\"$hostname\"" >> $hostname_conf
+hostname $hostname
 
 #
 # Set networking
@@ -147,11 +174,25 @@ if [ ! -z $droplet_user ] ; then
 		fi
 		me=`basename $0`
 		do_keys_tmp=`mktemp -t $me` || exit 1
-		$api_item/public-keys > $do_keys_tmp || (rm $do_keys_tmp && exit 1)
-		auth_keys="${ssh_dir}/.authorized_keys"
+		$api_item/public-keys > $do_keys_tmp && echo "" >> $do_keys_tmp || (rm $do_keys_tmp && exit 1)
+		auth_keys="${ssh_dir}/authorized_keys"
 		cat $auth_keys >> $do_keys_tmp 2>/dev/null
 		sort -u $do_keys_tmp > $auth_keys
 		rm $do_keys_tmp
 		chown $droplet_user $auth_keys && chmod 600 $auth_keys
 	fi
+fi
+
+
+#
+# Run commands provided via 'user-data'
+#
+
+userdata="`$api_item/user-data`"
+
+if [ ! -z "$userdata" ] ; then
+	userscript=`mktemp -t userdata` || exit 1
+	echo "$userdata" > $userscript
+	cat $userscript | sh
+	rm $userscript
 fi
