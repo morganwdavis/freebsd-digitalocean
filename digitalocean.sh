@@ -37,13 +37,15 @@ echo "$hostid" > /etc/hostid
 # resize the disk (enables droplet resizing)
 #
 
-/sbin/gpart recover vtbd0
-/sbin/gpart resize -i3 vtbd0
+if [ "$auto_resize" = "1" ]; then
+	/sbin/gpart recover vtbd0
+	/sbin/gpart resize -i3 vtbd0
 
-if [ -e /dev/gpt/disk0 ]; then
-	/sbin/zpool online -e zroot gpt/disk0
-else
-	/sbin/growfs -y /dev/gpt/rootfs
+	if [ -e /dev/gpt/disk0 ]; then
+		/sbin/zpool online -e zroot gpt/disk0
+	else
+		/sbin/growfs -y /dev/gpt/rootfs
+	fi
 fi
 
 #
