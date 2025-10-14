@@ -131,20 +131,26 @@ for i in $(${api_item}/interfaces); do
 done
 
 #
-# Support floating IP by adding anchor IP
+# Support reserved IP by adding anchor IP
 #
 
 for n in 4 6; do
-	fip_active=$(${api_item}/floating_ip/ipv"${n}"/active 2>/dev/null)
+	fip_active=$(${api_item}/reserved_ip/ipv"${n}"/active 2>/dev/null)
 	if [ "${fip_active}" = "true" ]; then
-		fip=$(${api_item}/floating_ip/ipv"${n}"/ip_address)
+		fip=$(${api_item}/reserved_ip/ipv"${n}"/ip_address)
 		aip=$(${api_item}/interfaces/public/0/anchor_ipv"${n}"/address)
 		v=""
 		if [ "${n}" = "6" ]; then
 			v="${n}"
 		fi
+
+		echo "reserved_ipv${n}=\"${fip}\"" >> "${network_conf}"
+		update_hosts "${fip}" "DO_RESERVED_IPV${n}"
+
+		# Note: keeping legacy floating_ip variable for backward compatibility
 		echo "floating_ipv${n}=\"${fip}\"" >> "${network_conf}"
 		update_hosts "${fip}" "DO_FLOATING_IPV${n}"
+
 		echo "ifconfig_${pub_if}_alias0=\"inet${v} ${aip}/16\"" >> "${network_conf}"
 		update_hosts "${aip}" "DO_ANCHOR_IPV${n}"
 	fi
