@@ -1,7 +1,4 @@
 #!/bin/sh
-# shellcheck disable=SC2312  # Piped commands intentionally use exit status of last command
-# shellcheck disable=SC2154  # Variables sourced from config file
-# shellcheck disable=SC2086  # api_item must expand unquoted (contains command with args)
 
 # digitalocean.sh
 #
@@ -14,6 +11,10 @@
 # !!! WARNING !!! WARNING !!! WARNING !!!
 #
 # Overwrites files in /etc/rc.conf.d specified in the local configuration file
+
+# shellcheck disable=SC2312  # Piped commands intentionally use exit status of last command
+# shellcheck disable=SC2154  # Variables sourced from config file
+# shellcheck disable=SC2086  # api_item must expand unquoted (contains command with args)
 
 # Local configuration file
 conf="/usr/local/etc/digitalocean.conf"
