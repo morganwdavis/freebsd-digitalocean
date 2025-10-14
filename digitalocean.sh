@@ -5,7 +5,7 @@
 # Creates system configuration files based on droplet metadata.
 #
 # Author: Morgan Davis (https://github.com/morganwdavis)
-# Version: 1.0
+# Version: 1.1
 # Current version and docs: https://github.com/morganwdavis/freebsd-digitalocean
 #
 # !!! WARNING !!! WARNING !!! WARNING !!!
@@ -40,7 +40,7 @@ fi
 # update hostid; needed for deploying from snapshots
 #
 
-hostid=$(kenv -q smbios.system.uuid)
+hostid=$(/bin/kenv -q smbios.system.uuid)
 if [ -e /etc/hostid ]; then
 	echo "current hostID = $(cat /etc/hostid)"
 fi
