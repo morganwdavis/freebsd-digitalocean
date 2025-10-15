@@ -58,7 +58,7 @@ Extraneous files and directories:
 -   /usr/local/etc/rc.d/cloud\* (cloudconfig, cloudfinal, cloudinit, cloudinitlocal)
 -   /usr/local/etc/rc.d/digitalocean\* (digitalocean, digitaloceanpre)
 
-## Installation and testing
+## Installation and Testing
 
 1. As root, run `./update.sh` which installs the necessary files:
 
@@ -83,7 +83,7 @@ Extraneous files and directories:
 
 **Hint:** sshd is configured to allow root-login with ssh-keys; so no additional user is needed. However, it is highly recommended to add a normal user and disable ssh root login.
 
-## Zero downtime network updates
+## Zero Downtime Network Updates
 
 It is possible to reconfigure the FreeBSD instance while running without needing to reboot. To restart networking and routing, enter these commands:
 
@@ -92,17 +92,17 @@ service digitalocean restart
 service netif restart && service routing restart
 ```
 
-## Dynamically updated hosts files
+## Dynamically Updated Hosts Files
 
 Setting the config option `hosts_file` to point to a file (such as /etc/hosts) will cause special `DO_*` entries found in that file to be updated with their corresponding IP addresses. Example:
 
 ```
-0.0.0.0         public-ip	# DO_PUB_IPV4
-0.0.0.0         private-ip	# DO_PVT_IPV4
-0.0.0.0         anchor-ip	# DO_ANCHOR_IPV4
-0.0.0.0         floating-ip	# DO_FLOATING_IPV4
-0.0.0.0         reserved-ip	# DO_RESERVED_IPV4
-0.0.0.0         gateway-ip	# DO_GW_IPV4
+0.0.0.0         public-ip       DO_PUB_IPV4
+0.0.0.0         private-ip      DO_PVT_IPV4
+0.0.0.0         anchor-ip       DO_ANCHOR_IPV4
+0.0.0.0         reserved-ip     DO_RESERVED_IPV4
+0.0.0.0         floating-ip     DO_FLOATING_IPV4
+0.0.0.0         gateway-ip      DO_GW_IPV4
 ```
 
 The script searches for a line with a `DO_*` entry, such as `DO_PUB_IPV4`, and replaces the first column address with the corresponding metadata address value. This creates an alias for services that listen on an address by referring to its symbolic `DO_` name. The `DO_*` symbols are required exactly as shown for matching purposes. Optionally, any other symbolic names may be included on the line, such as the `*-ip` examples above. In the case of the /etc/hosts file, this would allow a service to bind to the address associated with `anchor-ip`, provided the service permits host names.
@@ -115,7 +115,7 @@ anchor_ip=$(getent hosts anchor-ip | cut -f1 -d' ')
 
 (Use `_IPV6` suffixed symbols for IPv6 addresses.)
 
-> Note: The term "floating IPs" has been deprecated and replaced by DigitalOcean's new name "reserved IPs". Support for the new name is now provided here and both will have the same IP address.
+> Note: The term "floating IP" has been deprecated and replaced by DigitalOcean's new name "reserved IP". Support for the new name is now provided here and both will have the same IP address.
 
 ## User-Data Support
 
@@ -172,7 +172,7 @@ BOOTSTRAP_SCRIPT="/tmp/bootstrap.sh"
 /bin/rm -f "$BOOTSTRAP_SCRIPT"
 ```
 
-### How it Works
+### How It Works
 
 1. The droplet user-data script exports a unique droplet ID fetched from the DigitalOcean metadata service.
 2. It fetches the latest external bootstrap script using `fetch` from a stable URL you control.
@@ -180,17 +180,13 @@ BOOTSTRAP_SCRIPT="/tmp/bootstrap.sh"
 
 This approach keeps user-data minimal, uses dynamic external scripts for flexibility, and leverages the metadata API for unique droplet identity.
 
-## Why I made this
+## Why I Made This
 
 I didn't want to use DigitalOcean's implementation for auto-configuration. Extra packages of networking support tools and the special _freebsd_ user account increase attack surfaces. Those packages will require updates at some point. They take up disk space, create persistent processes in memory, and steal CPU cycles. This shell script-based solution does the trick.
 
-## What's next?
-
-I'd love to get some feedback from others running and testing this just to make sure it's solid and has all features working well. After that, I could see making this an actual FreeBSD package. That is, of course, if DigitalOcean doesn't adopt something equivalent in their upcoming base images.
-
 ## Updates
 
--   October 2025: Modernized shell scripts with proper quoting, error handling, and shellcheck compliance. Added user-data support.
+-   October 2025: Modernized shell scripts with proper quoting, error handling, shellcheck compliance, and much cleanup. Added user-data support.
 -   August 12, 2016: Added support for dynamically updated host file entries.
 -   August 3, 2016: DigitalOcean now offers FreeBSD base images with ZFS support! Removed references for [performing your own standard memory-based FreeBSD installation](https://github.com/fxlv/docs/blob/master/freebsd/freebsd-with-zfs-digitalocean.md) in order to run bsdinstall so you can enable ZFS on the root filesystem.
 -   July 28, 2016: This project was mentioned on [episode 152 of the BSD Now show](https://youtu.be/vcQPHHGnTwo?t=1h7m).
