@@ -81,7 +81,7 @@ Extraneous files and directories:
 
 7. If all looks good, you can restart the droplet
 
-**Hint:** sshd is configured to allow root-login with ssh-keys; so no additional user is needed. However, it is highly recommended to add a normal user and disable ssh root login.
+**Hint:** By default, sshd is configured to disallow root login, even with ssh-keys; so it is necessary to add a normal user for SSH access. It is highly recommended to continue disabling SSH root login and use a non-root user with sudo privileges for better security.
 
 ## Zero Downtime Network Updates
 
