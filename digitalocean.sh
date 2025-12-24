@@ -5,7 +5,7 @@
 # Creates system configuration files based on droplet metadata.
 #
 # Author: Morgan Davis (https://github.com/morganwdavis)
-# Version: 1.1
+# Version: 1.2.0
 # Current version and docs: https://github.com/morganwdavis/freebsd-digitalocean
 #
 # !!! WARNING !!! WARNING !!! WARNING !!!
@@ -52,14 +52,37 @@ echo "$hostid" > /etc/hostid
 #
 
 if [ "$auto_resize" = "1" ]; then
-	/sbin/gpart recover vtbd0
-	/sbin/gpart resize -i3 vtbd0
+    # 1. Attempt to identify ZFS root
+    ZROOT_DEV=$(/sbin/zpool list -vHP zroot 2>/dev/null | /usr/bin/awk '$1 ~ /^\/dev\// {print $1; exit}')
 
-	if [ -e /dev/gpt/disk0 ]; then
-		/sbin/zpool online -e zroot gpt/disk0
-	else
-		/sbin/growfs -y /dev/gpt/rootfs
-	fi
+    if [ -n "$ZROOT_DEV" ]; then
+        # --- ZFS Logic ---
+        # Get parent disk (e.g., vtbd0 from /dev/vtbd0p3)
+        PARENT_DISK=$(echo "$ZROOT_DEV" | /usr/bin/sed -E 's|/dev/([^p]+)p[0-9]+$|\1|')
+        # Get partition index (e.g., 3 from /dev/vtbd0p3)
+        PART_INDEX=$(echo "$ZROOT_DEV" | /usr/bin/sed -E 's|.*p([0-9]+)$|\1|')
+
+        if /sbin/gpart status "$PARENT_DISK" 2>/dev/null | grep -q "CORRUPT"; then
+            /sbin/gpart recover "$PARENT_DISK" >/dev/null 2>&1
+            /sbin/gpart resize -i "$PART_INDEX" "$PARENT_DISK" >/dev/null 2>&1
+            /sbin/zpool online -e zroot "$ZROOT_DEV" >/dev/null 2>&1
+            echo "ZFS expansion triggered: Resized /dev/${PARENT_DISK}p${PART_INDEX} and updated pool 'zroot'."
+        fi
+    elif [ -e /dev/gpt/rootfs ]; then
+        # --- UFS Fallback Logic ---
+        # Find disk and index for 'rootfs' label
+        # awk output for 'vtbd0p3' typically looks like: vtbd0 3
+        UFS_DATA=$(/sbin/gpart show -l | grep "rootfs" | awk '{print $NF}' | sed -E 's/([^p]+)p([0-9]+)/\1 \2/')
+        PARENT_DISK=$(echo "$UFS_DATA" | awk '{print $1}')
+        PART_INDEX=$(echo "$UFS_DATA" | awk '{print $2}')
+
+        if [ -n "$PARENT_DISK" ] && /sbin/gpart status "$PARENT_DISK" 2>/dev/null | grep -q "CORRUPT"; then
+            /sbin/gpart recover "$PARENT_DISK" >/dev/null 2>&1
+            /sbin/gpart resize -i "$PART_INDEX" "$PARENT_DISK" >/dev/null 2>&1
+            /sbin/growfs -y /dev/gpt/rootfs >/dev/null 2>&1
+            echo "UFS expansion triggered: Resized /dev/${PARENT_DISK}p${PART_INDEX} and ran growfs on /dev/gpt/rootfs."
+        fi
+    fi
 fi
 
 #
