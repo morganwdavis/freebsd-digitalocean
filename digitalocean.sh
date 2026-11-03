@@ -5,7 +5,7 @@
 # Creates system configuration files based on droplet metadata.
 #
 # Author: Morgan Davis (https://github.com/morganwdavis)
-# Version: 1.1
+# Version: 1.2.0
 # Current version and docs: https://github.com/morganwdavis/freebsd-digitalocean
 #
 # !!! WARNING !!! WARNING !!! WARNING !!!
@@ -48,17 +48,46 @@ echo "new hostID = $hostid"
 echo "$hostid" > /etc/hostid
 
 #
-# resize the disk (enables droplet resizing)
+# Grow the root partition and filesystem after a droplet resize. A bigger
+# disk leaves the GPT backup header short of the end, so gpart reports the
+# disk CORRUPT: that is the signal, and on every other boot nothing happens.
 #
 
-if [ "$auto_resize" = "1" ]; then
-	/sbin/gpart recover vtbd0
-	/sbin/gpart resize -i3 vtbd0
+if [ "${auto_resize}" = "1" ]; then
+	root_dev=$(mount -p | awk '$2 == "/" { print $1 }')
+	case "$(mount -p | awk '$2 == "/" { print $3 }')" in
+	zfs)
+		pool=${root_dev%%/*}
+		part=$(/sbin/zpool list -vHP "${pool}" | awk '$1 ~ /^\/dev\// { print substr($1, 6); exit }')
+		;;
+	ufs)
+		pool=''
+		part=${root_dev#/dev/}
+		;;
+	*)
+		part=''
+		;;
+	esac
+	# A label (gpt/rootfs) names its partition in glabel's third column
+	case "${part}" in
+	*/*) part=$(/sbin/glabel status -s | awk -v l="${part}" '$1 == l { print $3 }') ;;
+	esac
+	# vtbd0p3: disk vtbd0, index 3
+	case "${part}" in
+	*p[0-9]*) disk=${part%p*} index=${part##*p} ;;
+	*) disk='' ;;
+	esac
 
-	if [ -e /dev/gpt/disk0 ]; then
-		/sbin/zpool online -e zroot gpt/disk0
-	else
-		/sbin/growfs -y /dev/gpt/rootfs
+	if [ -n "${disk}" ] && /sbin/gpart status -s "${disk}" | grep -q CORRUPT; then
+		if /sbin/gpart recover "${disk}" && /sbin/gpart resize -i "${index}" "${disk}"; then
+			if [ -n "${pool}" ]; then
+				/sbin/zpool online -e "${pool}" "${part}"
+			else
+				/sbin/growfs -y /
+			fi
+		else
+			echo "$0: could not grow ${part} to fill ${disk}" >&2
+		fi
 	fi
 fi
 
